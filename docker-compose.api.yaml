@@ -15,6 +15,4 @@ services:
     ports:
       - '4343:4343'
     volumes:
-      - ./api/static:/usr/local/share/deadjokes-api/static:rw
-      - ./.data/jokes.sql:/usr/local/share/deadjokes-api/db/seed/jokes.sql:r
-    restart: unless-stopped
+      - ${XDG_DATA_HOME}/deadjokes-api/:/root/.local/share/deadjokes-api/:rw

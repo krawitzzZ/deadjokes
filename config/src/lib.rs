@@ -1,7 +1,7 @@
 pub mod api_config;
 pub mod infra_config;
 
-use std::{env, io, path::PathBuf, str::FromStr};
+use std::{env, io, str::FromStr};
 
 pub use api_config::ApiConfig;
 pub use infra_config::InfraConfig;
@@ -26,24 +26,5 @@ pub(self) trait Config {
                 Ok,
             ),
         }
-    }
-
-    fn get_directory_from_env(key: &str) -> io::Result<PathBuf> {
-        let path_str = env::var(key).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        let path = PathBuf::from(path_str);
-        let dir = if path.is_absolute() {
-            path
-        } else {
-            env::current_dir()?.join(path)
-        };
-
-        if !dir.is_dir() {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                format!("{} directory does not exist", key),
-            ));
-        }
-
-        dir.canonicalize()
     }
 }

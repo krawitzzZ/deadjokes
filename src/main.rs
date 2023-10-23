@@ -14,9 +14,10 @@ use infra::{
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
 
-    let api_config = ApiConfig::new()?;
+    let app_name = env!("CARGO_BIN_NAME");
+    let api_config = ApiConfig::new(app_name)?;
     let infra_config = InfraConfig::new()?;
-    let assets_params = FsAssetsParameters::new()?;
+    let assets_params = FsAssetsParameters::new(app_name)?;
     let assets = FsAssets::new(&assets_params);
     let db_conn = infra::db::init(&infra_config, assets)?;
     let db_container = InfraContainer::builder()
@@ -25,7 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build();
     let root_container = RootContainer::builder(Arc::new(db_container)).build();
     let state = AppState::new(
-        env!("CARGO_BIN_NAME"),
+        app_name,
         std::env::var("API_KEY").expect("API secret key to be set"),
         Arc::new(root_container),
     );

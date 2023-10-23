@@ -3,6 +3,7 @@ use dropbox_sdk::{
 };
 use futures_util::TryFutureExt;
 use std::{
+    fs,
     io::{self, Read},
     path::PathBuf,
 };
@@ -10,14 +11,13 @@ use tokio::fs as async_fs;
 
 use app::{AppError, AppResult, Assets};
 
-const JOKES_INITIAL_SEED_SQL_FILE: &str = ".data/jokes.sql";
+const JOKES_SEED_SQL_FILE: &str = "jokes.sql";
 
 impl FsAssetsParameters {
-    pub fn new() -> AppResult<Self> {
-        let pwd = std::env::current_dir().map_err(|e| {
-            AppError::AssetError(format!("failed to get jokes seed file path: {e}"))
-        })?;
-        let jokes_seed_sql = pwd.join(JOKES_INITIAL_SEED_SQL_FILE);
+    pub fn new(app_name: &str) -> AppResult<Self> {
+        let data_dir = dirs::data_dir()
+            .ok_or_else(|| AppError::AssetError(format!("failed to get user data dir")))?;
+        let jokes_seed_sql = data_dir.join(app_name).join(JOKES_SEED_SQL_FILE);
 
         Ok(Self { jokes_seed_sql })
     }
@@ -40,7 +40,12 @@ impl FsAssets {
         let dbx_auth = get_auth_from_env_or_prompt();
         let client = UserAuthDefaultClient::new(dbx_auth);
         let download_arg = files::DownloadArg::new("/jokes.sql".to_owned());
-        let mut file = std::fs::File::create(&self.jokes_seed_sql)?;
+
+        if let Some(parent) = self.jokes_seed_sql.parent() {
+            fs::create_dir_all(parent)?;
+        }
+
+        let mut file = fs::File::create(&self.jokes_seed_sql)?;
         let mut bytes_out = 0u64;
 
         'download: loop {
@@ -92,8 +97,15 @@ impl Assets for FsAssets {
         })?;
 
         if !seed_file_exists {
-            self.download_seed_sql()
-                .map_err(|e| AppError::AssetError(format!("failed to download jokes seed: {e}")))?;
+            if let Err(err) = self
+                .download_seed_sql()
+                .map_err(|e| AppError::AssetError(format!("failed to download jokes seed: {e}")))
+            {
+                if self.jokes_seed_sql.exists() {
+                    fs::remove_file(&self.jokes_seed_sql).unwrap();
+                }
+                return Err(err);
+            };
         }
 
         async_fs::read_to_string(&self.jokes_seed_sql)

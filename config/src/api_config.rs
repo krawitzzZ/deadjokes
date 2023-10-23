@@ -14,9 +14,14 @@ pub struct ApiConfig {
 impl Config for ApiConfig {}
 
 impl ApiConfig {
-    pub fn new() -> io::Result<Self> {
+    pub fn new(app_name: &str) -> io::Result<Self> {
         let port = Self::get_value_from_env("API_PORT", Some(3500u16))?;
-        let static_dir = Self::get_directory_from_env("STATIC_FOLDER")?;
+        let data_dir = dirs::data_dir().ok_or_else(|| {
+            io::Error::new(io::ErrorKind::NotFound, "failed to get user data dir")
+        })?;
+        let static_dir = data_dir.join(app_name).join("static");
+
+        std::fs::create_dir_all(&static_dir)?;
 
         Ok(Self { port, static_dir })
     }

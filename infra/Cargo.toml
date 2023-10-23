@@ -15,6 +15,7 @@ async-trait = { workspace = true }
 dropbox-sdk = { workspace = true }
 base64 = { workspace = true }
 chrono = { workspace = true }
+dirs = { workspace = true }
 either = { workspace = true }
 fern = "0.6"
 futures = { workspace = true }
