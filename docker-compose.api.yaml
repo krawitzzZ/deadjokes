@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  api:
+    image: deadjokes-api
+    container_name: deadjokes_api
+    env_file:
+      - .env
+    depends_on:
+      - database
+      - jaeger
+    networks:
+      - dbnetwork
+      - tracing_network
+    ports:
+      - '4343:4343'
+    volumes:
+      - ./api/static:/usr/local/share/deadjokes-api/static:rw
+      - ./.data/jokes.sql:/usr/local/share/deadjokes-api/db/seed/jokes.sql:r
+    restart: unless-stopped
