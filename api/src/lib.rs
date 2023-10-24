@@ -38,7 +38,7 @@ async fn start(config: ApiConfig, state: AppState) -> AppResult<()> {
     let static_dir = config.static_dir().to_path_buf();
     let app_state = web::Data::new(state);
 
-    infra::tracing::init(app_state.app_name());
+    infra::tracing::init(app_state.app_name(), &config);
 
     tracing::info!(port, "starting deadjokes-api server on port: {port}");
 

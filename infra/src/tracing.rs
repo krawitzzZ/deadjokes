@@ -1,3 +1,4 @@
+use config::api_config;
 use opentelemetry::{
     global, runtime::TokioCurrentThread, sdk::propagation::TraceContextPropagator,
 };
@@ -5,10 +6,11 @@ use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::{EnvFilter, Registry};
 
-pub fn init(name: &str) {
+pub fn init(name: &str, infra_config: &api_config::ApiConfig) {
     global::set_text_map_propagator(TraceContextPropagator::new());
 
     let tracer = opentelemetry_jaeger::new_agent_pipeline()
+        .with_endpoint(format!("{}:6831", infra_config.jaeger_host()))
         .with_service_name(name)
         .install_batch(TokioCurrentThread)
         .expect("Failed to install OpenTelemetry tracer");

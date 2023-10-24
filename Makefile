@@ -41,14 +41,18 @@ watch:
 start: infra
 	$(MAKE) run
 
-.PHONY: infra
-infra:
-	docker compose -f ./docker-compose.infra.yaml up -d
+.PHONY: elastic
+elastic:
+	docker compose -f ./docker-compose.elastic.yaml up -d
+
+.PHONY: db
+db:
+	docker compose -f ./docker-compose.db.yaml up -d
 
 .PHONY: up
 up:
-	docker compose -f ./docker-compose.infra.yaml -f ./docker-compose.api.yaml up -d
+	docker compose -f ./docker-compose.elastic.yaml -f ./docker-compose.db.yaml -f ./docker-compose.api.yaml up -d
 
 .PHONY: down
 down:
-	docker compose -f ./docker-compose.infra.yaml -f ./docker-compose.api.yaml down
+	docker compose -f ./docker-compose.elastic.yaml -f ./docker-compose.db.yaml -f ./docker-compose.api.yaml down

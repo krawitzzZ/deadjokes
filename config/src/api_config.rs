@@ -9,21 +9,27 @@ use crate::Config;
 pub struct ApiConfig {
     port: u16,
     static_dir: PathBuf,
+    jaeger_host: String,
 }
 
 impl Config for ApiConfig {}
 
 impl ApiConfig {
     pub fn new(app_name: &str) -> io::Result<Self> {
-        let port = Self::get_value_from_env("API_PORT", Some(3500u16))?;
         let data_dir = dirs::data_dir().ok_or_else(|| {
             io::Error::new(io::ErrorKind::NotFound, "failed to get user data dir")
         })?;
+        let port = Self::get_value_from_env("API_PORT", Some(3500u16))?;
         let static_dir = data_dir.join(app_name).join("static");
+        let jaeger_host = Self::get_value_from_env("JAEGER_HOST", Some("127.0.0.1".to_owned()))?;
 
         std::fs::create_dir_all(&static_dir)?;
 
-        Ok(Self { port, static_dir })
+        Ok(Self {
+            port,
+            static_dir,
+            jaeger_host,
+        })
     }
 
     pub fn port(&self) -> u16 {
@@ -32,5 +38,9 @@ impl ApiConfig {
 
     pub fn static_dir(&self) -> &Path {
         self.static_dir.as_path()
+    }
+
+    pub fn jaeger_host(&self) -> &str {
+        &self.jaeger_host
     }
 }

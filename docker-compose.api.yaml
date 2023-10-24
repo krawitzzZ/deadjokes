@@ -8,11 +8,11 @@ services:
       - .env
     depends_on:
       - database
-      - jaeger
+      - jaeger-agent
     networks:
       - dbnetwork
-      - tracing_network
+      - elastic_network
     ports:
       - '4343:4343'
     volumes:
-      - ${XDG_DATA_HOME}/deadjokes-api/:/root/.local/share/deadjokes-api/:rw
+      - '${XDG_DATA_HOME}/deadjokes-api/:/root/.local/share/deadjokes-api/:rw'
