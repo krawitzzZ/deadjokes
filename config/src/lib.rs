@@ -12,19 +12,17 @@ pub(self) trait Config {
     }
 
     fn get_value_from_env<T: FromStr>(key: &str, default: Option<T>) -> io::Result<T> {
-        let var_result = env::var(key)
-            .map_err(|e| io::Error::new(io::ErrorKind::NotFound, e))?
-            .parse::<T>();
-
-        match var_result {
-            Ok(var) => Ok(var),
-            Err(_) => default.map_or(
-                Err(io::Error::new(
+        match env::var(key) {
+            Err(e) => default.ok_or(io::Error::new(
+                io::ErrorKind::Other,
+                format!("failed to get value for `{key}` from env: {e}"),
+            )),
+            Ok(v) => v.parse::<T>().map_err(|_| {
+                io::Error::new(
                     io::ErrorKind::Other,
-                    format!("failed to parse environment variable {key}"),
-                )),
-                Ok,
-            ),
+                    format!("failed to parse environment variable `{key}`"),
+                )
+            }),
         }
     }
 }

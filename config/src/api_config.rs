@@ -19,9 +19,9 @@ impl ApiConfig {
         let data_dir = dirs::data_dir().ok_or_else(|| {
             io::Error::new(io::ErrorKind::NotFound, "failed to get user data dir")
         })?;
-        let port = Self::get_value_from_env("API_PORT", Some(3500u16))?;
+        let port = Self::get_value_from_env("API_PORT", Some(4343u16))?;
         let static_dir = data_dir.join(app_name).join("static");
-        let jaeger_host = Self::get_value_from_env("JAEGER_HOST", Some("127.0.0.1".to_owned()))?;
+        let jaeger_host = Self::get_value_from_env("JAEGER_HOST", Some(String::from("127.0.0.1")))?;
 
         std::fs::create_dir_all(&static_dir)?;
 

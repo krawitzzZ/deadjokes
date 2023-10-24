@@ -1,9 +1,10 @@
 use futures_util::TryFutureExt;
+use rand::{rngs::StdRng, Rng, SeedableRng};
 use sea_orm::{
     ActiveModelTrait, ConnectionTrait, DatabaseBackend, EntityTrait, PaginatorTrait, QueryFilter,
-    QueryOrder, QuerySelect, QueryTrait, Statement,
+    QuerySelect, QueryTrait, Statement,
 };
-use sea_query::{extension::postgres::PgExpr, Expr, Func, Order, PgFunc};
+use sea_query::{extension::postgres::PgExpr, Expr, PgFunc};
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -139,10 +140,18 @@ impl ModelRepository for PostgresJokeRepository {
 impl JokeRepository for PostgresJokeRepository {
     #[tracing::instrument(name = "infra:db:joke_repo:get_random", skip(self))]
     async fn get_random(&self) -> AppResult<Self::Model> {
+        let conn = self.pool.get();
+        let mut rng = StdRng::from_entropy();
+
+        let jokes_count = JokeEntity::find()
+            .count(conn)
+            .map_err(map_err::into_app_db_err)
+            .await?;
+
         JokeEntity::find()
-            .order_by(Expr::expr(Func::random()), Order::Asc)
+            .offset(rng.gen_range(1..jokes_count))
             .limit(1)
-            .one(self.pool.get())
+            .one(conn)
             .map_err(map_err::into_app_db_err)
             .await?
             .map(JokeModel::into)

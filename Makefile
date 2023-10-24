@@ -49,6 +49,10 @@ elastic:
 db:
 	docker compose -f ./docker-compose.db.yaml up -d
 
+.PHONY: infra
+infra:
+	docker compose -f ./docker-compose.elastic.yaml -f ./docker-compose.db.yaml up -d
+
 .PHONY: up
 up:
 	docker compose -f ./docker-compose.elastic.yaml -f ./docker-compose.db.yaml -f ./docker-compose.api.yaml up -d
