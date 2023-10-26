@@ -17,7 +17,7 @@ pub async fn create(
         .map_err(|e| match e {
             AppError::Duplicate(_) => Error::Conflict,
             _ => {
-                tracing::warn!(error = %e, "failed to create a cocktail");
+                tracing::warn!(error = %e, "failed to create a joke");
                 Error::InternalError
             }
         })

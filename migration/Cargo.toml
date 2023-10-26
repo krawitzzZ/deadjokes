@@ -18,4 +18,3 @@ sea-orm-migration = { version = "0.12", features = [
   "sqlx-postgres",
   "runtime-actix-rustls",
 ] }
-tracing = { workspace = true }

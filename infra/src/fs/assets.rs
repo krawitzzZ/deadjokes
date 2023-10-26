@@ -1,6 +1,4 @@
-use dropbox_sdk::{
-    default_client::UserAuthDefaultClient, files, oauth2::get_auth_from_env_or_prompt,
-};
+use dropbox_sdk::{default_client::UserAuthDefaultClient, files, oauth2::Authorization};
 use futures_util::TryFutureExt;
 use std::{
     fs,
@@ -14,18 +12,22 @@ use app::{AppError, AppResult, Assets};
 const JOKES_SEED_SQL_FILE: &str = "jokes.sql";
 
 impl FsAssetsParameters {
-    pub fn new(app_name: &str) -> AppResult<Self> {
+    pub fn new(app_name: &str, skip_seeding: bool) -> AppResult<Self> {
         let data_dir = dirs::data_dir()
             .ok_or_else(|| AppError::AssetError(format!("failed to get user data dir")))?;
         let jokes_seed_sql = data_dir.join(app_name).join(JOKES_SEED_SQL_FILE);
 
-        Ok(Self { jokes_seed_sql })
+        Ok(Self {
+            jokes_seed_sql,
+            skip_seeding,
+        })
     }
 }
 
 #[derive(Debug, Clone, shaku::Component)]
 #[shaku(interface = Assets)]
 pub struct FsAssets {
+    skip_seeding: bool,
     jokes_seed_sql: PathBuf,
 }
 
@@ -33,11 +35,19 @@ impl FsAssets {
     pub fn new(params: &FsAssetsParameters) -> Self {
         Self {
             jokes_seed_sql: params.jokes_seed_sql.clone(),
+            skip_seeding: params.skip_seeding,
         }
     }
 
     fn download_seed_sql(&self) -> io::Result<()> {
-        let dbx_auth = get_auth_from_env_or_prompt();
+        // let dbx_auth = get_auth_from_env_or_prompt();
+        let token = std::env::var("DBX_OAUTH_TOKEN").map_err(|e| {
+            io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("dropbox token is not provided: {e}"),
+            )
+        })?;
+        let dbx_auth = Authorization::from_access_token(token);
         let client = UserAuthDefaultClient::new(dbx_auth);
         let download_arg = files::DownloadArg::new("/jokes.sql".to_owned());
 
@@ -92,6 +102,10 @@ impl FsAssets {
 #[async_trait::async_trait]
 impl Assets for FsAssets {
     async fn initial_jokes_seed(&self) -> AppResult<String> {
+        if self.skip_seeding {
+            return Ok(String::new());
+        }
+
         let seed_file_exists = &self.jokes_seed_sql.try_exists().map_err(|e| {
             AppError::AssetError(format!("failed to check jokes seed file existence: {e}"))
         })?;
