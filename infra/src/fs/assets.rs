@@ -40,7 +40,6 @@ impl FsAssets {
     }
 
     fn download_seed_sql(&self) -> io::Result<()> {
-        // let dbx_auth = get_auth_from_env_or_prompt();
         let token = std::env::var("DBX_OAUTH_TOKEN").map_err(|e| {
             io::Error::new(
                 io::ErrorKind::NotFound,
