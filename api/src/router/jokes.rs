@@ -30,6 +30,7 @@ fn get_joke_service(
     state: &web::Data<app::AppState>,
 ) -> Result<Box<app::joke::JokeService>, Error> {
     state.container().provide().map_err(|e| {
+        log::error!("failed to retrieve JokeService: {e}");
         tracing::error!(
             error = %e,
             "failed to retrieve JokeService"

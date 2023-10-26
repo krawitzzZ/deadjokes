@@ -20,7 +20,7 @@ pub async fn update(
         .map_err(|e| match e {
             AppError::NotFound(_) => Error::NotFound,
             _ => {
-                tracing::warn!(error = %e, "failed to create a cocktail");
+                log::warn!("failed to update a joke with id '{id}': {e}");
                 Error::InternalError
             }
         })

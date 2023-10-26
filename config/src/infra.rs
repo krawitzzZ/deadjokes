@@ -1,21 +1,19 @@
 use std::io;
 
-use crate::Config;
+use crate::{get_flag_from_env, get_value_from_env};
 
 #[derive(Debug, Clone)]
-pub struct InfraConfig {
+pub struct Config {
     db_url: String,
     db_logging_enabled: bool,
     run_migrations_on_start: bool,
 }
 
-impl Config for InfraConfig {}
-
-impl InfraConfig {
+impl Config {
     pub fn new() -> io::Result<Self> {
-        let db_url = Self::get_value_from_env("DATABASE_URL", None)?;
-        let db_logging_enabled = Self::get_flag_from_env("DB_LOGGING_ENABLED");
-        let run_migrations_on_start = Self::get_flag_from_env("RUN_MIGRATIONS_ON_START");
+        let db_url = get_value_from_env("DATABASE_URL")?;
+        let db_logging_enabled = get_flag_from_env("DB_LOGGING_ENABLED");
+        let run_migrations_on_start = get_flag_from_env("RUN_MIGRATIONS_ON_START");
 
         Ok(Self {
             db_url,

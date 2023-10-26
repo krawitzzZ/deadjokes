@@ -8,7 +8,8 @@ services:
       - .env
     depends_on:
       - database
-      - jaeger-agent
+      - logstash
+      - jaeger-collector
     networks:
       - dbnetwork
       - elastic_network
@@ -16,3 +17,4 @@ services:
       - '4343:4343'
     volumes:
       - '${XDG_DATA_HOME}/deadjokes-api/:/root/.local/share/deadjokes-api/:rw'
+    restart: on-failure

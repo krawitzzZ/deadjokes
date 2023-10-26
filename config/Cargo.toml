@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 dirs = { workspace = true }
+log = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }

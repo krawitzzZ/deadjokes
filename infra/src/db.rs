@@ -10,7 +10,7 @@ use std::{
 use tokio::time::timeout;
 
 use app::Assets;
-use config::InfraConfig;
+use config::infra;
 use migration::{init_migrator, Migrator, MigratorTrait};
 
 pub use joke_repository::*;
@@ -18,7 +18,7 @@ pub use pool::*;
 
 const PAGE_SIZE: u64 = 50;
 
-pub fn init(config: &InfraConfig, assets: impl Assets) -> io::Result<DbConn> {
+pub fn init(config: &infra::Config, assets: impl Assets) -> io::Result<DbConn> {
     let result = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?

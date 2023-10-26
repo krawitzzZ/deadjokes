@@ -26,7 +26,7 @@ release:
 	cargo build --release
 
 .PHONY: image
-image: release
+image: build
 	docker build -t deadjokes-api .
 
 .PHONY: run

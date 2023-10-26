@@ -16,7 +16,7 @@ pub async fn get_all(
     let result = get_joke_service(&state)?
         .query(query.into_inner().into())
         .map_err(|e| {
-            tracing::warn!(error = %e, "failed to query jokes");
+            log::warn!("failed to query jokes: {e}");
             Error::InternalError
         })
         .await?;
@@ -33,11 +33,7 @@ pub async fn find_by_id(
     let joke_opt = get_joke_service(&state)?
         .find_by_id(id)
         .map_err(|e| {
-            tracing::warn!(
-                error = %e,
-                joke.id = %id,
-                "failed to fetch joke"
-            );
+            log::warn!("failed to fetch a joke with id '{id}': {e}");
             Error::InternalError
         })
         .await?;
@@ -53,10 +49,7 @@ pub async fn get_random(state: web::Data<app::AppState>) -> Response<JokeDto> {
     let joke = get_joke_service(&state)?
         .get_random()
         .map_err(|e| {
-            tracing::warn!(
-                error = %e,
-                "failed to get random joke"
-            );
+            log::warn!("failed to get random joke: {e}");
             Error::InternalError
         })
         .await?;

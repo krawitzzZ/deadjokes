@@ -14,13 +14,11 @@ actix-files = { version = "0.6" }
 actix-web = { version = "4" }
 actix-web-lab = { version = "0.19.2" }
 anyhow = { workspace = true }
-base64 = { workspace = true }
 chrono = { workspace = true }
 futures = { workspace = true }
+log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-strum = { workspace = true }
-strum_macros = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 tracing-actix-web = { workspace = true }

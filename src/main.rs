@@ -3,7 +3,10 @@ mod container;
 use std::sync::Arc;
 
 use app::AppState;
-use config::{ApiConfig, InfraConfig};
+use config;
+use config::{
+    api::Config as ApiConfig, common::Config as CommonConfig, infra::Config as InfraConfig,
+};
 use container::RootContainer;
 use infra::{
     db::{Pool, PoolParameters},
@@ -15,8 +18,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
 
     let app_name = env!("CARGO_BIN_NAME");
-    let api_config = ApiConfig::new(app_name)?;
+    let common_config = CommonConfig::new()?;
     let infra_config = InfraConfig::new()?;
+    let api_config = ApiConfig::new(app_name)?;
+
+    // infra::logging::init(&common_config);
+    infra::spawn_signal_handler();
+
     let assets_params = FsAssetsParameters::new(app_name)?;
     let assets = FsAssets::new(&assets_params);
     let db_conn = infra::db::init(&infra_config, assets)?;
@@ -31,7 +39,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Arc::new(root_container),
     );
 
-    api::main(api_config, state);
+    api::main(&common_config, &api_config, state);
 
     Ok(())
 }

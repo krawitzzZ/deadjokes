@@ -8,7 +8,7 @@ use actix_cors::Cors;
 use actix_files as fs;
 use actix_web::body::MessageBody;
 use actix_web::dev::{ServiceRequest, ServiceResponse};
-use actix_web::middleware::{DefaultHeaders, ErrorHandlers};
+use actix_web::middleware::{DefaultHeaders, ErrorHandlers, Logger};
 use actix_web::{http, web, App, Error, HttpServer};
 use actix_web_lab::middleware::{CatchPanic, NormalizePath, PanicReporter};
 use anyhow::Context;
@@ -16,7 +16,7 @@ use tracing::Span;
 use tracing_actix_web::{DefaultRootSpanBuilder, RootSpanBuilder, TracingLogger};
 
 use app::{AppResult, AppState};
-use config::ApiConfig;
+use config::{api, common};
 
 use crate::error_handler::{handle_data, handle_generic};
 
@@ -33,14 +33,19 @@ impl RootSpanBuilder for DeadjokesApiRootSpanBuilder {
 }
 
 #[actix_web::main]
-async fn start(config: ApiConfig, state: AppState) -> AppResult<()> {
-    let port = config.port();
-    let static_dir = config.static_dir().to_path_buf();
+async fn start(
+    common_config: &common::Config,
+    api_config: &api::Config,
+    state: AppState,
+) -> AppResult<()> {
+    let port = api_config.port();
+    let static_dir = api_config.static_dir().to_path_buf();
     let app_state = web::Data::new(state);
 
-    infra::tracing::init(app_state.app_name(), &config);
+    infra::tracing::init(app_state.app_name(), &common_config);
 
-    tracing::info!(port, "starting deadjokes-api server on port: {port}");
+    // TODO: check message formatted as json works
+    log::info!("starting deadjokes-api server on port: {port}");
 
     HttpServer::new(move || {
         let json = web::JsonConfig::default().limit(1024 * 1024 * 10);
@@ -49,6 +54,7 @@ async fn start(config: ApiConfig, state: AppState) -> AppResult<()> {
             .allow_any_method()
             .allow_any_header();
         App::new()
+            .wrap(Logger::default())
             // Util middleware
             .wrap(NormalizePath::trim())
             .wrap(cors)
@@ -61,8 +67,14 @@ async fn start(config: ApiConfig, state: AppState) -> AppResult<()> {
             .wrap(CatchPanic::default())
             .wrap(PanicReporter::new(|err| {
                 match err.downcast_ref::<String>() {
-                    Some(error) => tracing::error!(error, "panic during request processing"),
-                    None => tracing::error!("panic during request processing"),
+                    Some(error) => {
+                        log::error!("panic during request processing: {error}");
+                        tracing::error!(error, "panic during request processing");
+                    }
+                    None => {
+                        log::error!("panic during request processing");
+                        tracing::error!("panic during request processing");
+                    }
                 }
             }))
             .wrap(TracingLogger::<DeadjokesApiRootSpanBuilder>::new())
@@ -84,8 +96,8 @@ async fn start(config: ApiConfig, state: AppState) -> AppResult<()> {
     Ok(())
 }
 
-pub fn main(config: ApiConfig, state: AppState) {
-    let result = start(config, state);
+pub fn main(common_config: &common::Config, api_config: &api::Config, state: AppState) {
+    let result = start(common_config, api_config, state);
 
     if let Some(e) = result.err() {
         tracing::error!(

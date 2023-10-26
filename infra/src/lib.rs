@@ -1,6 +1,9 @@
 pub mod db;
 pub mod fs;
+pub mod logging;
 pub mod tracing;
+
+use signal_hook::{consts, iterator::Signals, low_level::exit};
 
 use app::{Assets, DbPool, JokeRepository};
 use db::{Pool, PostgresJokeRepository};
@@ -18,4 +21,24 @@ shaku::module! {
         components = [Pool, FsAssets],
         providers = [PostgresJokeRepository]
     }
+}
+
+pub fn spawn_signal_handler() {
+    let mut signals = Signals::new(&[consts::SIGINT, consts::SIGTERM])
+        .expect("signal handler failed to initialize");
+
+    std::thread::spawn(move || {
+        let mut stop_in_progress = false;
+        for _sig in signals.forever() {
+            std::thread::spawn(move || {
+                log::logger().flush();
+                opentelemetry::global::shutdown_tracer_provider();
+                exit(0)
+            });
+            if stop_in_progress {
+                exit(1);
+            }
+            stop_in_progress = true;
+        }
+    });
 }
