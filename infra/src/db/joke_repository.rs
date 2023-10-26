@@ -57,6 +57,14 @@ impl PostgresJokeRepository {
             .and_then(|om| async { Ok(om.map(Into::into)) })
             .await
     }
+
+    #[tracing::instrument(name = "infra:db:joke_repo:get_count", skip(self))]
+    async fn get_count(&self) -> AppResult<u64> {
+        JokeEntity::find()
+            .count(self.pool.get())
+            .map_err(map_err::into_app_db_err)
+            .await
+    }
 }
 
 #[async_trait::async_trait]
@@ -141,15 +149,11 @@ impl JokeRepository for PostgresJokeRepository {
     #[tracing::instrument(name = "infra:db:joke_repo:get_random", skip(self))]
     async fn get_random(&self) -> AppResult<Self::Model> {
         let conn = self.pool.get();
-        let mut rng = StdRng::from_entropy();
-
-        let jokes_count = JokeEntity::find()
-            .count(conn)
-            .map_err(map_err::into_app_db_err)
-            .await?;
+        let jokes_count = self.get_count().await?;
+        let offset = StdRng::from_entropy().gen_range(1..jokes_count);
 
         JokeEntity::find()
-            .offset(rng.gen_range(1..jokes_count))
+            .offset(offset)
             .limit(1)
             .one(conn)
             .map_err(map_err::into_app_db_err)
