@@ -5,6 +5,9 @@ mod response;
 mod router;
 
 use actix_cors::Cors;
+use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
+use actix_extensible_rate_limit::backend::SimpleInputFunctionBuilder;
+use actix_extensible_rate_limit::RateLimiter;
 use actix_files as fs;
 use actix_web::body::MessageBody;
 use actix_web::dev::{ServiceRequest, ServiceResponse};
@@ -12,6 +15,7 @@ use actix_web::middleware::{DefaultHeaders, ErrorHandlers};
 use actix_web::{http, web, App, Error, HttpServer};
 use actix_web_lab::middleware::{CatchPanic, NormalizePath, PanicReporter};
 use anyhow::Context;
+use std::time::Duration;
 use tracing::Span;
 use tracing_actix_web::{DefaultRootSpanBuilder, RootSpanBuilder, TracingLogger};
 
@@ -47,6 +51,15 @@ async fn start(
     tracing::info!("starting deadjokes-api server on port: {port}");
 
     HttpServer::new(move || {
+        let rate_limit = RateLimiter::builder(
+            InMemoryBackend::builder().build(),
+            SimpleInputFunctionBuilder::new(Duration::from_secs(10), 5)
+                .peer_ip_key()
+                .real_ip_key()
+                .build(),
+        )
+        .add_headers()
+        .build();
         let json = web::JsonConfig::default().limit(1024 * 1024 * 10);
         let cors = Cors::default()
             .allow_any_origin()
@@ -61,6 +74,7 @@ async fn start(
             .app_data(web::QueryConfig::default().error_handler(|err, _| handle_data(err)))
             .app_data(web::PathConfig::default().error_handler(|err, _| handle_data(err)))
             .wrap(ErrorHandlers::new().default_handler(handle_generic))
+            .wrap(rate_limit)
             .wrap(DefaultHeaders::new().add(http::header::ContentType::json()))
             .wrap(CatchPanic::default())
             .wrap(PanicReporter::new(|err| {
