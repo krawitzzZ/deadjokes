@@ -5,6 +5,7 @@ use app::QueryResult;
 pub type Response<T> = Result<Success<T>, Error>;
 
 #[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PaginatedResponse<T: serde::Serialize> {
     current_page: u64,
     total_pages: u64,
